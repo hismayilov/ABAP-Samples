@@ -2,4 +2,4 @@
 
 Some sample ALV codes.
 
-1. Simplified Pop-Up ALV
+1. Simplified Pop-Up ALV ( zpopup_alv_test.abap )
