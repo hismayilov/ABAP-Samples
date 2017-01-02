@@ -103,7 +103,7 @@ FORM push_button .
 *     filter fields
           lo_column ?= lo_columns->get_column( 'MANDT' ).
           IF lo_column IS BOUND.
-            lo_column->set_technical( abap_true ).
+            lo_column->set_technical( abap_true ). " 'X'
             FREE lo_column.
           ENDIF.
 
