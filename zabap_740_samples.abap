@@ -54,10 +54,12 @@ FORM run_the_world .
         lt_fidesc_option LIKE rsvbfidesc OCCURS 5 WITH HEADER LINE.
 
   DATA(lt_sel_list) = VALUE tty_selection_list(
-                          ( l = 'Get DB values into ITAB with inline DATA declaration' )
-                          ( l = 'Get DB values with cased values (this support only EQ operand)' )
-                          ( l = 'Concatenate with inline declaration)' )
-                          ( l = 'Change value with Constructor Operator REF' )
+                          ( l = '1. Get DB values into ITAB with inline DATA declaration' )
+                          ( l = '2. Get DB values with cased values (this support only EQ operand)' )
+                          ( l = '3. Concatenate with inline declaration' )
+                          ( l = '4. Change value with Constructor Operator REF' )
+                          ( l = '5. Crate and fill typical range with FOR' )
+                          ( l = '6. Sample usage for FOR statement' )
                         ).
 
   CLEAR lt_fidesc_option. REFRESH lt_fidesc_option.
@@ -105,7 +107,7 @@ FORM run_the_world .
 
     WHEN 3. " Concatenate with inline declaration
       SELECT SINGLE * FROM sflight INTO @DATA(ls_3).
-      DATA(lv_concatenated_value) = |{ ls_3-carrid }'s price is { ls_3-price } { ls_3-currency }|.
+      DATA(lv_concatenated_value) = |{ ls_3-carrid }`s price is { ls_3-price } { ls_3-currency }|.
       WRITE:/ lv_concatenated_value.
 
     WHEN 4. " Change value with Constructor Operator REF
@@ -115,7 +117,52 @@ FORM run_the_world .
       lv_seatsmax->* = lv_seatsmax->* * 2.
       WRITE:/ |After multiply with REF param, SEATSMAX is: { ls_4-seatsmax }|.
 
-    WHEN 5. "
+    WHEN 5. " Crate and fill typical range
+      DATA: ra_char10 TYPE RANGE OF char10.
+      ra_char10 = VALUE #( FOR i = 1 WHILE i <= 100 ( sign = 'I' option = 'EQ' low = i ) ).
+      PERFORM show_popup_alv USING ra_char10 'ABAP - 7.40'.
+
+    WHEN 6. " Sample usage for FOR statement
+      SELECT * UP TO 10 ROWS FROM sflight INTO TABLE @DATA(lt_6_flight).
+      SELECT *               FROM scarr   INTO TABLE @DATA(lt_6_scarr).
+
+      TYPES: BEGIN OF ty6,
+               carrid TYPE sflight-carrid,
+               fldate TYPE sflight-fldate,
+             END OF ty6.
+      TYPES: tty6 TYPE STANDARD TABLE OF ty6 WITH EMPTY KEY.
+      TYPES: BEGIN OF ty6_1,
+               " SCarr
+               carrname         TYPE scarr-carrname,
+
+               " SFlight
+               connid           TYPE sflight-connid,
+               fldate           TYPE sflight-fldate,
+               price            TYPE sflight-price,
+               currency         TYPE sflight-currency,
+               planetype        TYPE sflight-planetype,
+
+               " Multiplied
+               multiplied_price TYPE sflight-price,
+             END OF ty6_1.
+      TYPES: tty6_1 TYPE STANDARD TABLE OF ty6_1 WITH EMPTY KEY.
+
+      DATA(lt_6_new1) = VALUE tty6( FOR ls_6 IN lt_6_flight ( carrid = ls_6-carrid fldate = ls_6-fldate ) ).
+      PERFORM show_popup_alv USING lt_6_new1 'ABAP - 7.40 : Non-Filtered'.
+
+      DATA(lt_6_new2) = VALUE tty6( FOR ls_6 IN lt_6_flight WHERE ( fldate > '20170101' ) ( carrid = ls_6-carrid fldate = ls_6-fldate ) ).
+      PERFORM show_popup_alv USING lt_6_new2 'ABAP - 7.40 : Filtered'.
+
+      DATA(lt_6_new3) = VALUE tty6_1( FOR ls_sflight IN lt_6_flight
+                                      FOR ls_scarr   IN lt_6_scarr WHERE ( carrid = ls_sflight-carrid )
+                                      ( carrname         = ls_scarr-carrname
+                                        connid           = ls_sflight-connid
+                                        fldate           = ls_sflight-fldate
+                                        price            = ls_sflight-price
+                                        currency         = ls_sflight-currency
+                                        planetype        = ls_sflight-planetype
+                                        multiplied_price = ls_sflight-price * 3 ) ).
+      PERFORM show_popup_alv USING lt_6_new3 'ABAP - 7.40 : Mixed'.
 
   ENDCASE.
 ENDFORM.
